@@ -27,8 +27,8 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     user = await users_controller.authenticate_user(username=form_data.username, password=form_data.password)
-    access_token = users_controller.create_access_token(subject=user.username)
-    refresh_token = users_controller.create_refresh_token(subject=user.username)
+    access_token = users_controller.create_token(subject=user.username)
+    refresh_token = users_controller.create_token(subject=user.username, token_type="refresh")
     response.set_cookie(key="access_token", value=f"{access_token}", httponly=True)
     response.set_cookie(key="refresh_token", value=f"{refresh_token}", httponly=True)
     return {
@@ -45,7 +45,7 @@ async def login(
 async def refresh_token(response: Response, refresh_token: str):
     user = await users_controller.verify_token(token=refresh_token, token_type="refresh")
     access_token = users_controller.create_access_token(subject=user.username)
-    new_refresh_token = users_controller.create_refresh_token(subject=user.username)
+    new_refresh_token = users_controller.create_refresh_token(subject=user.username, token_type="refresh")
 
     response.set_cookie(key="access_token", value=access_token, httponly=True)
     response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
