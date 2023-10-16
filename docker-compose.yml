@@ -20,8 +20,8 @@ services:
   postgres:
     container_name: postgres
     image: postgres:15-bullseye
-    ports:
-      - "5432:5432"
+    # ports:
+      # - "5432:5432"
     env_file:
       - .env.example
     healthcheck:

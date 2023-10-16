@@ -15,5 +15,10 @@ class UserCreate(BaseModel):
     password: str | None = None
 
 
+class UserShow(BaseModel):
+    username: str
+    email: str | None = None
+    full_name: str | None = None
+
 class UserInDB(User):
     hashed_password: str

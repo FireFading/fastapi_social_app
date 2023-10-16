@@ -21,4 +21,6 @@ class JWTSettings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
+    refresh_token_expire_minutes: int
+    jwt_refresh_secret_key: str
 
