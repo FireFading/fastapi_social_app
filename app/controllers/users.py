@@ -2,14 +2,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from app.config import jwt_settings
+from app.database import with_async_session
+from app.models.users import User as UserModel
 from app.schemas.tokens import TokenData
 from app.schemas.users import UserCreate as UserCreateSchema
 from app.services.users import UsersService, users_service
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
-from app.models.users import User as UserModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import with_async_session
 
 
 class UsersController:
@@ -50,11 +50,12 @@ class UsersController:
         return user
 
     @with_async_session
-    async def get_current_user(
+    async def verify_token(
         self,
         token: str,
         session: AsyncSession | None = None,
-    ) -> UserModel | HTTPException:
+        token_type: str = "access",
+    ):
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -62,17 +63,28 @@ class UsersController:
         )
         try:
             payload = jwt.decode(
-                token, jwt_settings.secret_key, algorithms=[jwt_settings.algorithm]
+                token=token,
+                key=jwt_settings.secret_key
+                if token_type == "access"
+                else jwt_settings.refresh_secret_key,
+                algorithms=[jwt_settings.jwt_algorithm],
             )
+
+            token_exp = payload.get("exp")
+            if not token_exp:
+                raise credentials_exception
+
+            now = datetime.now(timezone.utc)
+            if now > datetime.fromtimestamp(token_exp):
+                raise credentials_exception
+
             username = payload.get("sub")
             if not username:
                 raise credentials_exception
-            token_data = TokenData(username=username)
+
         except JWTError:
             raise credentials_exception
-        user = await self.users_service.get_user(
-            username=token_data.username, session=session
-        )
+        user = await self.users_service.get_user(username=username, session=session)
         if not user:
             raise credentials_exception
         return user
@@ -103,7 +115,7 @@ class UsersController:
 
         to_encode = {"exp": expires_delta, "sub": subject}
         return jwt.encode(
-            to_encode, jwt_settings.jwt_refresh_secret_key, jwt_settings.algorithm
+            to_encode, jwt_settings.refresh_secret_key, jwt_settings.algorithm
         )
 
 

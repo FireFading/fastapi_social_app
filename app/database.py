@@ -1,9 +1,9 @@
 from collections.abc import AsyncGenerator
+from functools import wraps
 
 from app.config import database_settings
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from functools import wraps
 
 engine = create_async_engine(database_settings.database_url, future=True, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

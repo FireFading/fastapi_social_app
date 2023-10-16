@@ -5,7 +5,7 @@ load_dotenv(dotenv_path="../")
 
 
 class PostgresSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file="./.env.example", env_file_encoding="utf-8", extra='allow')
+    model_config = SettingsConfigDict(env_file="./.env.example", env_file_encoding="utf-8", extra="allow")
 
     database_url: str
 
@@ -16,11 +16,10 @@ class PostgresSettings(BaseSettings):
 
 
 class JWTSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file="./.env.example", env_file_encoding="utf-8", extra='allow')
+    model_config = SettingsConfigDict(env_file="./.env.example", env_file_encoding="utf-8", extra="allow")
 
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
     refresh_token_expire_minutes: int
-    jwt_refresh_secret_key: str
-
+    refresh_secret_key: str

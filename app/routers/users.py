@@ -1,17 +1,9 @@
-from typing import Annotated
-
 from app.controllers.users import users_controller
-from app.models.users import User as UserModel
-from app.schemas.users import (
-    User as UserSchema,
-    UserCreate as UserCreateSchema,
-    UserShow as UserShowSchema,
-)
 from app.schemas.tokens import Token
-from fastapi import APIRouter, Depends, status, Response
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.security import OAuth2PasswordBearer
-
+from app.schemas.users import UserCreate as UserCreateSchema
+from app.schemas.users import UserShow as UserShowSchema
+from fastapi import APIRouter, Depends, Response, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 router = APIRouter(
     prefix="/users", tags=["users"], responses={404: {"description": "Not found"}}
@@ -49,6 +41,27 @@ async def login(
     }
 
 
+@router.post(
+    "/refresh-token/",
+    response_model=Token,
+    status_code=status.HTTP_200_OK,
+    summary="Refresh Access Token",
+)
+async def refresh_token(response: Response, refresh_token: str):
+    user = await users_controller.verify_token(
+        token=refresh_token, token_type="refresh"
+    )
+    access_token = users_controller.create_access_token(subject=user.username)
+    new_refresh_token = users_controller.create_refresh_token(subject=user.username)
+
+    response.set_cookie(key="access_token", value=access_token, httponly=True)
+    response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
+
+    return {
+        "access_token": access_token,
+    }
+
+
 @router.get(
     "/users/me/",
     response_model=UserShowSchema,
@@ -56,4 +69,4 @@ async def login(
     summary="Get user info",
 )
 async def current_user(token: str = Depends(oauth2_scheme)):
-    return await users_controller.get_current_user(token=token)
+    return await users_controller.verify_token(token=token)
