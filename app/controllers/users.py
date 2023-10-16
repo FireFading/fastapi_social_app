@@ -1,11 +1,17 @@
 from datetime import datetime, timedelta, timezone
 
 from app.config import jwt_settings
+from app.exceptions.users import (
+    InactiveUserException,
+    InsufficientCredentialsException,
+    UnauthorizedException,
+    UserExistsException,
+)
 from app.models.users import User as UserModel
 from app.schemas.users import UserCreate as UserCreateSchema
 from app.schemas.users import UserUpdate as UserUpdateSchema
 from app.services.users import UsersService, users_service
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from jose import JWTError, jwt
 
 
@@ -19,10 +25,7 @@ class UsersController:
     ) -> UserModel | HTTPException:
         email = user_schema.email
         if await self.users_service.get_user(email=email):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User with this email already exists",
-            )
+            raise UserExistsException()
         user = UserModel(**user_schema.model_dump())
         return await self.users_service.create(user=user)
 
@@ -33,11 +36,7 @@ class UsersController:
     ) -> UserModel | HTTPException:
         user = await self.users_service.authenticate_user(username=username, password=password)
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise UnauthorizedException()
         return user
 
     async def update_user_info(self, user: UserModel, update_user_schema: UserUpdateSchema) -> UserModel:
@@ -50,11 +49,6 @@ class UsersController:
         token: str,
         token_type: str = "access",
     ):
-        credentials_exception = HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
         try:
             payload = jwt.decode(
                 token=token,
@@ -64,22 +58,22 @@ class UsersController:
 
             token_exp = payload.get("exp")
             if not token_exp:
-                raise credentials_exception
+                raise InsufficientCredentialsException()
 
             now = datetime.now(timezone.utc)
             if now > datetime.fromtimestamp(token_exp, tz=timezone.utc):
-                raise credentials_exception
+                raise InsufficientCredentialsException()
             username = payload.get("sub")
             if not username:
-                raise credentials_exception
+                raise InsufficientCredentialsException()
 
         except JWTError:
-            raise credentials_exception
+            raise InsufficientCredentialsException()
         user = await self.users_service.get_user(username=username)
         if not user:
-            raise credentials_exception
+            raise InsufficientCredentialsException()
         if user.disabled:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+            raise InactiveUserException()
         return user
 
     def create_token(self, subject: str, token_type: str = "access") -> str:
