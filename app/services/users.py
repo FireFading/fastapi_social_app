@@ -1,3 +1,4 @@
+from app.database import with_async_session
 from app.models.users import User as UserModel
 from app.repositories.users import UsersRepository, users_repository
 from passlib.context import CryptContext
@@ -10,18 +11,25 @@ class UsersService:
     def __init__(self, users_repository: UsersRepository) -> None:
         self.users_repository = users_repository
 
-    async def get_user(self, session: AsyncSession, **kwargs) -> UserModel | None:
+    @with_async_session
+    async def get_user(self, session: AsyncSession | None = None, **kwargs) -> UserModel | None:
         return await self.users_repository.get(session=session, **kwargs)
 
-    async def create(self, user: UserModel, session: AsyncSession) -> UserModel:
+    @with_async_session
+    async def create(self, user: UserModel, session: AsyncSession | None = None) -> UserModel:
         user.password = self.get_password_hash(user.password)
         return await self.users_repository.create(instance=user, session=session)
 
-    async def authenticate_user(self, username: str, password: str, session: AsyncSession) -> bool:
+    @with_async_session
+    async def authenticate_user(self, username: str, password: str, session: AsyncSession | None = None) -> bool:
         user = await self.users_repository.get(session=session, username=username)
         if not user:
             return False
         return user if self.verify_password(plain_password=password, hashed_password=user.password) else False
+
+    @with_async_session
+    async def update_info(self, user: UserModel, session: AsyncSession | None = None) -> UserModel:
+        return await self.users_repository.update(instance=user, session=session)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)

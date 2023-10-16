@@ -21,5 +21,10 @@ class UserShow(BaseModel):
     full_name: str | None = None
 
 
+class UserUpdate(BaseModel):
+    email: str | None = None
+    full_name: str | None
+
+
 class UserInDB(User):
     hashed_password: str
