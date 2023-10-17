@@ -72,7 +72,7 @@ class UsersController:
         user = await self.users_service.get_user(username=username)
         if not user:
             raise InsufficientCredentialsException()
-        if user.disabled:
+        if user.is_disabled:
             raise InactiveUserException()
         return user
 

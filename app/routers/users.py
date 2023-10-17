@@ -1,14 +1,13 @@
+from app.config import oauth2_scheme
 from app.controllers.users import users_controller
 from app.schemas.tokens import Token
 from app.schemas.users import UserCreate as UserCreateSchema
 from app.schemas.users import UserShow as UserShowSchema
 from app.schemas.users import UserUpdate as UserUpdateSchema
 from fastapi import APIRouter, Depends, Response, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix="/users", tags=["users"], responses={404: {"description": "Not found"}})
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login/", scheme_name="JWT")
 
 
 @router.post(
