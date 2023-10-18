@@ -11,16 +11,24 @@ class UserExistsException(HTTPException):
 
 class UnauthorizedException(HTTPException):
     def __init__(self):
-        super().__init(
+        super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect credentials",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class PasswordsMismatchException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords mismatch",
         )
 
 
 class InsufficientCredentialsException(HTTPException):
     def __init__(self):
-        super().__init(
+        super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Insufficient credentials",
             headers={"WWW-Authenticate": "Bearer"},
@@ -29,7 +37,7 @@ class InsufficientCredentialsException(HTTPException):
 
 class InactiveUserException(HTTPException):
     def __init__(self):
-        super().__init(
+        super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user",
         )

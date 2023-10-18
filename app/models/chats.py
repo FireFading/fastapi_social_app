@@ -4,6 +4,7 @@ from datetime import datetime
 from app.database import Base
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 
 class Chat(Base):
@@ -34,6 +35,8 @@ class Message(Base):
     chat_id = Column(ForeignKey("chats.id", ondelete="CASCADE"), nullable=False)
     content = Column(String(255), nullable=False)
 
+    read_statuses = relationship("ReadStatus", back_populates="message")
+
 
 class ReadStatus(Base):
     __tablename__ = "read_statuses"
@@ -47,6 +50,8 @@ class ReadStatus(Base):
     read_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     user_id = Column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     message_id = Column(ForeignKey("messages.id", ondelete="CASCADE"), nullable=False)
+
+    message = relationship("Message", back_populates="read_statuses")
 
 
 class UserChat(Base):

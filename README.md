@@ -1,9 +1,14 @@
 ## Features
 - JWT-authentication
 - create private chat
+- update user info
+- upload avatar to user profile
+- change user password
 - add member to chat
 - get all chats allowed to user
 - get messages from chat
+- send message to chat via websockets
+- mark message as read
 
 ## Installation
 - in env.example all variables used in project, change it to .env, several variables that are common, already define as example, secret variables is empty

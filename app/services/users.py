@@ -1,6 +1,7 @@
 from app.database import with_async_session
 from app.models.users import User as UserModel
 from app.repositories.users import UsersRepository, users_repository
+from fastapi import UploadFile
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +31,16 @@ class UsersService:
     @with_async_session
     async def update_info(self, user: UserModel, session: AsyncSession | None = None) -> UserModel:
         return await self.users_repository.update(instance=user, session=session)
+
+    @with_async_session
+    async def update_avatar(self, user: UserModel, photo: UploadFile, session: AsyncSession | None = None) -> UserModel:
+        return await self.users_repository.upload_photo(instance=user, photo=photo, session=session)
+
+    def get_avatar(self, user: UserModel) -> str | None:
+        return self.users_repository.download_photo(instance=user)
+
+    def delete_avatar(self, user: UserModel):
+        self.users_repository.delete_photo(instance=user)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)

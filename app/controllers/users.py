@@ -4,14 +4,16 @@ from app.config import jwt_settings
 from app.exceptions.users import (
     InactiveUserException,
     InsufficientCredentialsException,
+    PasswordsMismatchException,
     UnauthorizedException,
     UserExistsException,
 )
 from app.models.users import User as UserModel
+from app.schemas.users import UpdatePassword as UpdatePasswordSchema
 from app.schemas.users import UserCreate as UserCreateSchema
 from app.schemas.users import UserUpdate as UserUpdateSchema
 from app.services.users import UsersService, users_service
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from jose import JWTError, jwt
 
 
@@ -42,6 +44,13 @@ class UsersController:
     async def update_user_info(self, user: UserModel, update_user_schema: UserUpdateSchema) -> UserModel:
         user.full_name = update_user_schema.full_name
         user.email = update_user_schema.email
+        return await self.users_service.update_info(user=user)
+
+    async def change_password(self, user: UserModel, data: UpdatePasswordSchema) -> UserModel:
+        await self.authenticate_user(username=user.username, password=data.old_password)
+        if data.password != data.new_password:
+            raise PasswordsMismatchException()
+        user.password = self.users_service.get_password_hash(password=data.password)
         return await self.users_service.update_info(user=user)
 
     async def verify_token(
@@ -86,6 +95,15 @@ class UsersController:
         to_encode = {"exp": expires_in, "sub": subject}
         secret_key = jwt_settings.secret_key if token_type == "access" else jwt_settings.refresh_secret_key
         return jwt.encode(to_encode, key=secret_key, algorithm=jwt_settings.algorithm)
+
+    async def update_avatar(self, user: UserModel, photo: UploadFile) -> UserModel:
+        return await self.users_service.update_avatar(user=user, photo=photo)
+
+    def get_avatar(self, user: UserModel) -> str | None:
+        return self.users_service.get_avatar(user=user)
+
+    def delete_avatar(self, user: UserModel):
+        self.users_service.delete_avatar(user=user)
 
 
 users_controller = UsersController(users_service=users_service)

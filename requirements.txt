@@ -18,3 +18,4 @@ passlib[bcrypt]
 
 pydantic
 pydantic_settings
+websockets

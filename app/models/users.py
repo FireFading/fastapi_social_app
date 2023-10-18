@@ -19,6 +19,7 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     is_disabled = Column(Boolean, default=False, nullable=False)
     password = Column(String(255), nullable=False)
+    avatar = Column(String(255), nullable=True)
 
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"

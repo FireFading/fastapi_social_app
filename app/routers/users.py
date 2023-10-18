@@ -1,10 +1,12 @@
 from app.config import oauth2_scheme
 from app.controllers.users import users_controller
 from app.schemas.tokens import Token
+from app.schemas.users import UpdatePassword as UpdatePasswordSchema
 from app.schemas.users import UserCreate as UserCreateSchema
 from app.schemas.users import UserShow as UserShowSchema
 from app.schemas.users import UserUpdate as UserUpdateSchema
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, UploadFile, status
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix="/users", tags=["users"], responses={404: {"description": "Not found"}})
@@ -33,6 +35,25 @@ async def login(
     return {
         "access_token": access_token,
     }
+
+
+@router.delete("/logout/", status_code=status.HTTP_200_OK, summary="Logout")
+async def logout(response: Response, token: str = Depends(oauth2_scheme)):
+    await users_controller.verify_token(token=token)
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
+    return {"detail": "logout"}
+
+
+@router.post(
+    "/change-password/",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Change password",
+)
+async def change_password(data: UpdatePasswordSchema, token: str = Depends(oauth2_scheme)):
+    user = await users_controller.verify_token(token=token)
+    await users_controller.change_password(user=user, data=data)
+    return {"detail": "password updated"}
 
 
 @router.post(
@@ -76,3 +97,24 @@ async def update_user_info(
 ):
     current_user = await users_controller.verify_token(token=token)
     return await users_controller.update_user_info(user=current_user, update_user_schema=user_update)
+
+
+@router.post("/avatar/", status_code=status.HTTP_200_OK, summary="Update User Avatar")
+async def update_user_avatar(photo: UploadFile, token: str = Depends(oauth2_scheme)):
+    current_user = await users_controller.verify_token(token=token)
+    await users_controller.update_avatar(user=current_user, photo=photo)
+    return {"detail": "photo uploaded"}
+
+
+@router.get("/avatar/", status_code=status.HTTP_200_OK, summary="Get User Avatar")
+async def get_avatar(token: str = Depends(oauth2_scheme)):
+    current_user = await users_controller.verify_token(token=token)
+    avatar = users_controller.get_avatar(user=current_user)
+    return FileResponse(avatar) if avatar else {"detail": "no avatar"}
+
+
+@router.delete("/avatar/", status_code=status.HTTP_200_OK, summary="Delete User Avatar")
+async def delete_avatar(token: str = Depends(oauth2_scheme)):
+    current_user = await users_controller.verify_token(token=token)
+    users_controller.delete_avatar(user=current_user)
+    return {"detail": "photo deleted"}
