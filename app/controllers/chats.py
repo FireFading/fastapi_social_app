@@ -60,8 +60,8 @@ class ChatsController:
         await websocket.accept()
         self.connection_dict[user.id] = websocket
 
-    def disconnect(self, websocket: WebSocket) -> None:
-        self.connection_dict.pop(websocket)
+    def disconnect(self, user_id: UUID) -> None:
+        self.connection_dict.pop(user_id)
 
     async def mark_as_read(self, user: UserModel, message_id: UUID) -> None:
         read_status = ReadStatusModel(user_id=user.id, message_id=message_id)

@@ -91,6 +91,11 @@ async def chatting(
     user = await users_controller.verify_token(token=token)
     await chats_controller.check_allowed_user(user=user, chat_id=chat_id)
     await chats_controller.connect(websocket=websocket, user=user)
-    while True:
-        data = await websocket.receive_text()
-        await chats_controller.send_message(data=data, chat_id=chat_id, user=user, message_schema=message_schema)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await chats_controller.send_message(data=data, chat_id=chat_id, user=user, message_schema=message_schema)
+    except Exception as e:
+        print(e)
+    finally:
+        await chats_controller.disconnect(user_id=user.id)

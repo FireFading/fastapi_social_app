@@ -35,7 +35,7 @@ class UsersService:
         return user if self.verify_password(plain_password=password, hashed_password=user.password) else False
 
     @with_async_session
-    async def update_info(self, user: UserModel, session: AsyncSession | None = None) -> UserModel:
+    async def update(self, user: UserModel, session: AsyncSession | None = None) -> UserModel:
         return await self.users_repository.update(instance=user, session=session)
 
     @with_async_session

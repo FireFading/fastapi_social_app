@@ -52,21 +52,21 @@ class UsersController:
     async def update_user_info(self, user: UserModel, update_user_schema: UserUpdateSchema) -> UserModel:
         user.full_name = update_user_schema.full_name
         user.email = update_user_schema.email
-        return await self.users_service.update_info(user=user)
+        return await self.users_service.update(user=user)
 
     async def change_password(self, user: UserModel, data: UpdatePasswordSchema) -> UserModel:
         await self.authenticate_user(username=user.username, password=data.old_password)
         if data.password != data.new_password:
             raise PasswordsMismatchException()
         user.password = self.users_service.get_password_hash(password=data.password)
-        return await self.users_service.update_info(user=user)
+        return await self.users_service.update(user=user)
 
     async def reset_password(self, token: str, data: ResetPasswordSchema):
         if data.password != data.confirm_password:
             raise PasswordsMismatchException()
         user = await self.verify_token(token=token, token_type="reset")
         user.password = self.users_service.get_password_hash(password=data.password)
-        return await self.users_service.update_info(user=user)
+        return await self.users_service.update(user=user)
 
     async def search_users(self, data: str) -> list[UserModel] | None:
         return await self.users_service.search_users(username__contains=data)
