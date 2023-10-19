@@ -24,11 +24,17 @@ class ChatsController:
         user_ids = await self.chats_service.get_members(chat_id=chat_id)
         return user.id in user_ids
 
-    async def add_member(self, chat_id: UUID, user: UserModel, member: UserMemberSchema):
+    async def add_member(self, chat_id: UUID, user: UserModel, member: UserMemberSchema) -> None:
         if not await self.check_allowed_user(user=user, chat_id=chat_id):
             raise NotAllowedException()
         user_chat = UserChatModel(user_id=member.id, chat_id=chat_id)
         await self.chats_service.add_member(user_chat=user_chat)
+
+    async def remove_member(self, chat_id: UUID, user: UserModel, member: UserMemberSchema) -> None:
+        if not await self.check_allowed_user(user=user, chat_id=chat_id):
+            raise NotAllowedException()
+        user_chat = UserChatModel(user_id=member.id, chat_id=chat_id)
+        await self.chats_service.remove_member(user_chat=user_chat)
 
     async def get_members(self, user: UserModel, chat_id: UUID) -> list[UserMemberSchema]:
         if not await self.check_allowed_user(user=user, chat_id=chat_id):

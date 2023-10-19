@@ -43,6 +43,9 @@ class BaseRepository:
                     elif field.endswith("__in"):
                         model_field = getattr(self.model, field[:-4])
                         filters.append(model_field.in_(value))
+                    elif field.endswith("__contains"):
+                        model_field = getattr(self.model, field[:-10])
+                        filters.append(model_field.contains(value))
                     else:
                         model_field = getattr(self.model, field)
                         filters.append(model_field == value)

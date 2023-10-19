@@ -7,8 +7,10 @@ from app.exceptions.users import (
     PasswordsMismatchException,
     UnauthorizedException,
     UserExistsException,
+    UserNotFoundException,
 )
 from app.models.users import User as UserModel
+from app.schemas.users import ResetPassword as ResetPasswordSchema
 from app.schemas.users import UpdatePassword as UpdatePasswordSchema
 from app.schemas.users import UserCreate as UserCreateSchema
 from app.schemas.users import UserUpdate as UserUpdateSchema
@@ -20,6 +22,12 @@ from jose import JWTError, jwt
 class UsersController:
     def __init__(self, users_service: UsersService) -> None:
         self.users_service = users_service
+
+    async def get_user_or_404(self, email: str) -> UserModel | HTTPException:
+        user = await self.users_service.get_user(email=email)
+        if not user:
+            raise UserNotFoundException()
+        return user
 
     async def register(
         self,
@@ -53,6 +61,16 @@ class UsersController:
         user.password = self.users_service.get_password_hash(password=data.password)
         return await self.users_service.update_info(user=user)
 
+    async def reset_password(self, token: str, data: ResetPasswordSchema):
+        if data.password != data.confirm_password:
+            raise PasswordsMismatchException()
+        user = await self.verify_token(token=token, token_type="reset")
+        user.password = self.users_service.get_password_hash(password=data.password)
+        return await self.users_service.update_info(user=user)
+
+    async def search_users(self, data: str) -> list[UserModel] | None:
+        return await self.users_service.search_users(username__contains=data)
+
     async def verify_token(
         self,
         token: str,
@@ -72,13 +90,17 @@ class UsersController:
             now = datetime.now(timezone.utc)
             if now > datetime.fromtimestamp(token_exp, tz=timezone.utc):
                 raise InsufficientCredentialsException()
-            username = payload.get("sub")
-            if not username:
+            sub = payload.get("sub")
+            print(sub)
+            if not sub:
                 raise InsufficientCredentialsException()
 
         except JWTError:
             raise InsufficientCredentialsException()
-        user = await self.users_service.get_user(username=username)
+        if token_type == "reset":
+            return await self.users_service.get_user(email=sub)
+        else:
+            user = await self.users_service.get_user(username=sub)
         if not user:
             raise InsufficientCredentialsException()
         if user.is_disabled:

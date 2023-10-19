@@ -23,3 +23,28 @@ class JWTSettings(BaseSettings):
     access_token_expire_minutes: int
     refresh_token_expire_minutes: int
     refresh_secret_key: str
+
+
+class MailSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file="./.env.example", env_file_encoding="utf-8", extra="allow")
+
+    domain_name: str
+    mail_username: str
+    mail_password: str
+    mail_port: int
+    mail_server: str
+    mail_starttls: bool
+    mail_ssl_tls: bool
+    mail_from: str
+    mail_from_name: str
+    mail_validate_certs: bool
+
+
+class OAuth2Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file="./.env.example", env_file_encoding="utf-8", extra="allow")
+
+    google_client_id: str
+    google_client_secret: str
+
+    github_client_id: str
+    github_client_secret: str

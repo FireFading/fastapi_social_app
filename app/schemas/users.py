@@ -37,7 +37,21 @@ class UserMember(BaseModel):
     id: UUID
 
 
+class UserEmail(BaseModel):
+    email: str
+
+
+class UserSearch(BaseModel):
+    username: str | None = None
+    email: str | None = None
+
+
 class UpdatePassword(BaseModel):
     old_password: str
     password: str
     new_password: str
+
+
+class ResetPassword(BaseModel):
+    password: str
+    confirm_password: str

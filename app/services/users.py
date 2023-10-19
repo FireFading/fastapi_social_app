@@ -17,12 +17,18 @@ class UsersService:
         return await self.users_repository.get(session=session, **kwargs)
 
     @with_async_session
+    async def search_users(self, session: AsyncSession | None = None, **kwargs) -> list[UserModel] | None:
+        return await self.users_repository.filter(session=session, **kwargs)
+
+    @with_async_session
     async def create(self, user: UserModel, session: AsyncSession | None = None) -> UserModel:
         user.password = self.get_password_hash(user.password)
         return await self.users_repository.create(instance=user, session=session)
 
     @with_async_session
-    async def authenticate_user(self, username: str, password: str, session: AsyncSession | None = None) -> bool:
+    async def authenticate_user(
+        self, username: str, password: str, session: AsyncSession | None = None
+    ) -> UserModel | bool:
         user = await self.users_repository.get(session=session, username=username)
         if not user:
             return False

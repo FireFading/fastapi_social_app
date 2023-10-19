@@ -1,14 +1,16 @@
 ## Features
-- JWT-authentication
-- create private chat
-- update user info
-- upload avatar to user profile
-- change user password
-- add member to chat
-- get all chats allowed to user
-- get messages from chat
-- send message to chat via websockets
-- mark message as read
+- Secure Authentication: Implement JWT-based authentication for user access control.
+- Private Group Chat Creation: Enable users to create group private chats for conversations.
+- User Profile Customization: Allow users to update and personalize their profile information.
+- Avatar Upload: Empower users to upload custom avatars to enhance their profile visibility.
+- Password Management: Provide a password change feature to enhance user account security.
+- Password Reset Request: Allow users to request a password reset if they've forgotten their current password.
+- Chat Membership Control: Enable chat members to add/remove members to/from existing chat groups.
+- User Search: Allow users to search for other users based on their usernames.
+- Chat Listing: Provide users with the ability to view a list of all chat rooms they are part of.
+- Message Retrieval: Allow users to access chat messages, view chat history, and scroll through past conversations.
+- Real-time Messaging: Implement WebSocket support to facilitate instant message delivery in chat rooms.
+- Message Status Tracking: Enable users to mark messages as read to track their interaction with chat content.
 
 ## Installation
 - in env.example all variables used in project, change it to .env, several variables that are common, already define as example, secret variables is empty

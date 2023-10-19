@@ -1,10 +1,13 @@
 from app.config import oauth2_scheme
 from app.controllers.users import users_controller
 from app.schemas.tokens import Token
+from app.schemas.users import ResetPassword as ResetPasswordSchema
 from app.schemas.users import UpdatePassword as UpdatePasswordSchema
 from app.schemas.users import UserCreate as UserCreateSchema
+from app.schemas.users import UserEmail as UserEmailSchema
 from app.schemas.users import UserShow as UserShowSchema
 from app.schemas.users import UserUpdate as UserUpdateSchema
+from app.utils.mail import html_reset_password_mail, send_mail
 from fastapi import APIRouter, Depends, Response, UploadFile, status
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -27,11 +30,12 @@ async def login(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ):
-    user = await users_controller.authenticate_user(username=form_data.username, password=form_data.password)
-    access_token = users_controller.create_token(subject=user.username)
-    refresh_token = users_controller.create_token(subject=user.username, token_type="refresh")
-    response.set_cookie(key="access_token", value=f"{access_token}", httponly=True)
-    response.set_cookie(key="refresh_token", value=f"{refresh_token}", httponly=True)
+    username = form_data.username
+    await users_controller.authenticate_user(username=username, password=form_data.password)
+    access_token = users_controller.create_token(subject=username)
+    refresh_token = users_controller.create_token(subject=username, token_type="refresh")
+    response.set_cookie(key="access_token", value=access_token, httponly=True)
+    response.set_cookie(key="refresh_token", value=refresh_token, httponly=True)
     return {
         "access_token": access_token,
     }
@@ -57,6 +61,35 @@ async def change_password(data: UpdatePasswordSchema, token: str = Depends(oauth
 
 
 @router.post(
+    "/forgot-password/",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Send requests for reset password token mail",
+)
+async def forgot_password(data: UserEmailSchema):
+    email = data.email
+    await users_controller.get_user_or_404(email=email)
+    reset_password_token = users_controller.create_token(subject=email, token_type="reset")
+    subject = "Reset password"
+    recipients = [email]
+    body = html_reset_password_mail(reset_password_token=reset_password_token)
+    await send_mail(subject=subject, recipients=recipients, body=body)
+    return {"detail": "reset token sent"}
+
+
+@router.post(
+    "/reset-password/{token}",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Reset password",
+)
+async def reset_password(
+    token: str,
+    data: ResetPasswordSchema,
+):
+    await users_controller.reset_password(token=token, data=data)
+    return {"detail": "password reset"}
+
+
+@router.post(
     "/refresh-token/",
     response_model=Token,
     status_code=status.HTTP_200_OK,
@@ -64,8 +97,8 @@ async def change_password(data: UpdatePasswordSchema, token: str = Depends(oauth
 )
 async def refresh_token(response: Response, refresh_token: str):
     user = await users_controller.verify_token(token=refresh_token, token_type="refresh")
-    access_token = users_controller.create_access_token(subject=user.username)
-    new_refresh_token = users_controller.create_refresh_token(subject=user.username, token_type="refresh")
+    access_token = users_controller.create_token(subject=user.username)
+    new_refresh_token = users_controller.create_token(subject=user.username, token_type="refresh")
 
     response.set_cookie(key="access_token", value=access_token, httponly=True)
     response.set_cookie(key="refresh_token", value=new_refresh_token, httponly=True)
@@ -83,6 +116,17 @@ async def refresh_token(response: Response, refresh_token: str):
 )
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     return await users_controller.verify_token(token=token)
+
+
+@router.get(
+    "/search/{data}",
+    response_model=list[UserShowSchema],
+    status_code=status.HTTP_200_OK,
+    summary="Search users",
+)
+async def search_users(data: str, token: str = Depends(oauth2_scheme)):
+    await users_controller.verify_token(token=token)
+    return await users_controller.search_users(data=data)
 
 
 @router.put(

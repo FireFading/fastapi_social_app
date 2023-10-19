@@ -1,6 +1,9 @@
 aiosqlite
 alembic
 asyncpg
+fastapi
+fastapi_mail
+# fastapi_oauth2
 fastapi_pagination
 python-multipart
 httpx

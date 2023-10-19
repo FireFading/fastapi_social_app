@@ -58,6 +58,18 @@ async def add_member(chat_id: UUID, member: UserMemberSchema, token: str = Depen
     return await chats_controller.get_members(chat_id=chat_id, user=user)
 
 
+@router.delete(
+    "/{chat_id}/remove-member/",
+    response_model=list[UserMemberSchema],
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Remove member from chat",
+)
+async def remove_member(chat_id: UUID, member: UserMemberSchema, token: str = Depends(oauth2_scheme)):
+    user = await users_controller.verify_token(token=token)
+    await chats_controller.remove_member(chat_id=chat_id, member=member, user=user)
+    return await chats_controller.get_members(chat_id=chat_id, user=user)
+
+
 @router.get(
     "/{chat_id}/members/",
     response_model=list[UserMemberSchema],

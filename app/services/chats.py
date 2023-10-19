@@ -65,6 +65,10 @@ class ChatsService:
     async def add_member(self, user_chat: UserChatModel, session: AsyncSession | None = None):
         await self.users_chats_repository.create(instance=user_chat, session=session)
 
+    @with_async_session
+    async def remove_member(self, user_chat: UserChatModel, session: AsyncSession | None = None):
+        await self.users_chats_repository.delete(instance=user_chat, session=session)
+
 
 chats_service = ChatsService(
     chats_repository=chats_repository,
