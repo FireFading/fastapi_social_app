@@ -60,15 +60,3 @@ OR `make postgres`
 - run flake8: `flake8 --config=configs/.flake8 app`
 
 - OR `nox` in root
-
-## Run tests
-- all tests run in `github actions`
-```bash
-  pytest .
-```
-OR `pytest ./tests` OR run `nox`
-- run coverage
-```bash
-  coverage run -m pytest
-```
-OR in `nox`
